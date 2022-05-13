@@ -5,6 +5,7 @@
 #include <netdb.h>      /* struct hostent, gethostbyname */
 #include <arpa/inet.h>
 #include <unistd.h>     /* read, write, close */
+#include <regex>
 #include "nlohmann/json.hpp"
 #include "helpers.hpp"
 #include "requests.hpp"
@@ -13,6 +14,7 @@ using namespace std;
 using json = nlohmann::json;
 
 int sockfd;
+string sessionId;
 
 void registerUser();
 void login();
@@ -28,7 +30,7 @@ int main(int argc, char* argv[])
 {
     string command;
     char* connectionIP = (char*)"34.241.4.235";
-    sockfd = open_connection(connectionIP, 8080, IPPROTO_IPV6, SOCK_STREAM, 0);
+    sockfd = open_connection(connectionIP, 8080, AF_INET, SOCK_STREAM, 0);
 
     while(1)
     {
@@ -89,10 +91,16 @@ void registerUser()
     data["password"] = password;
     string message;
     string response;
-    message = compute_post_request("34.241.4.235", "api/v1/tema/auth/register", "application/json", data, 2, vector<string>(), 0);
+    message = compute_post_request("34.241.4.235", "/api/v1/tema/auth/register", "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
-    response = receive_from_server(sockfd);
-    cout << response << "\n";
+    response = basic_extract_json_response(receive_from_server(sockfd));
+    if(!response.empty()){
+        json responseJSON = json::parse(response);
+        if(responseJSON.contains("error"))
+        {
+            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+        }
+    }
 }
 
 void login()
@@ -108,16 +116,28 @@ void login()
     data["password"] = password;
     string message;
     string response;
-    message = compute_post_request("34.241.4.235", "api/v1/tema/auth/login", "application/json", data, 2, vector<string>(), 0);
+    message = compute_post_request("34.241.4.235", "/api/v1/tema/auth/login", "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
+    response = response.substr(response.find("connect.sid="));
+    sessionId = response.substr(0, response.find(";"));
+    response = basic_extract_json_response(response);
+    if(!response.empty()){
+        json responseJSON = json::parse(response);
+        if(responseJSON.contains("error"))
+        {
+            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+        }
+    }
 }
 
 void enter_library()
 {
     string message;
     string response;
-    message = compute_get_request("34.241.4.235", "api/v1/tema/library/access", "", vector<string>(), 0);
+    vector<string> cookies;
+    cookies.push_back(sessionId);
+    message = compute_get_request("34.241.4.235", "/api/v1/tema/library/access", "", cookies, cookies.size());
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
 }
@@ -126,9 +146,10 @@ void get_books()
 {
     string message;
     string response;
-    message = compute_get_request("34.241.4.235", "api/v1/tema/library/books", "", vector<string>(), 0);
+    message = compute_get_request("34.241.4.235", "/api/v1/tema/library/books", "", vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
+    cout<<response;
 }
 
 void get_book()
@@ -138,7 +159,7 @@ void get_book()
     cin >> id;
     string message;
     string response;
-    message = compute_get_request("34.241.4.235", "api/v1/tema/library/books/" + id, "", vector<string>(), 0);
+    message = compute_get_request("34.241.4.235", "/api/v1/tema/library/books/" + id, "", vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
 }
@@ -168,7 +189,7 @@ void add_book()
     data["publisher"] = publisher;
     string message;
     string response;
-    message = compute_post_request("34.241.4.235", "api/v1/tema/auth/books", "application/json", data, 2, vector<string>(), 0);
+    message = compute_post_request("34.241.4.235", "/api/v1/tema/auth/books", "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
 }
@@ -178,13 +199,16 @@ void delete_book()
     int id;
     cout << "id=";
     cin >> id;
+    string message;
+    string response;
+    message = compute_delete_request("34.241.4.235", "/api/v1/tema/auth/books/" + id, "", "", 0, vector<string>(), 0);
 }
 
 void logout()
 {
     string message;
     string response;
-    message = compute_get_request("34.241.4.235", "api/v1/tema/library/logout", "", vector<string>(), 0);
+    message = compute_get_request("34.241.4.235", "/api/v1/tema/library/logout", "", vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
 }
