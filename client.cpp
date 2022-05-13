@@ -148,15 +148,20 @@ void enter_library()
     message = compute_get_request("34.241.4.235", "/api/v1/tema/library/access", "", "", cookies, cookies.size());
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
-    response = basic_extract_json_response(response);
-    json responseJSON = json::parse(response);
-    if(responseJSON.contains("error"))
-    {
-        cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+    if(!basic_extract_json_response(response).empty()){
+        response = basic_extract_json_response(response);
+        json responseJSON = json::parse(response);
+        if(responseJSON.contains("error"))
+        {
+            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+        }
+        else if(responseJSON.contains("token")){
+            tokenJWT = regex_replace(responseJSON["token"].dump(), regex("\""), "");
+            cout << "200 - OK - Entered library.\n";
+        }
     }
-    if(responseJSON.contains("token")){
-        tokenJWT = regex_replace(responseJSON["token"].dump(), regex("\""), "");
-        cout << "200 - OK - Entered library.\n";
+    else{
+        cout << "Error\n";
     }
 }
 
@@ -167,15 +172,16 @@ void get_books()
     message = compute_get_request("34.241.4.235", "/api/v1/tema/library/books", "", tokenJWT, vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
-    response = basic_extract_json_response(response);
+    cout << response;
+    /*response = basic_extract_json_response(response);
     json responseJSON = json::parse(response);
     if(responseJSON.contains("error"))
     {
         cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
     }
     else{
-        cout << response;
-    }
+        cout << response << "\n";
+    }*/
 }
 
 void get_book()
@@ -195,7 +201,7 @@ void get_book()
         cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
     }
     else{
-        cout << response;
+        cout << response << "\n";
     }
 }
 
@@ -212,10 +218,10 @@ void add_book()
     cin >> author;
     cout << "genre=";
     cin >> genre;
-    cout << "publisher=";
-    cin >> publisher;
     cout << "page_count=";
     cin >> page_count;
+    cout << "publisher=";
+    cin >> publisher;
     json data;
     data["title"] = title;
     data["author"] = author;
@@ -224,7 +230,7 @@ void add_book()
     data["publisher"] = publisher;
     string message;
     string response;
-    message = compute_post_request("34.241.4.235", "/api/v1/tema/auth/books", tokenJWT, "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
+    message = compute_post_request("34.241.4.235", "/api/v1/tema/library/books", tokenJWT, "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
     if(!basic_extract_json_response(response).empty()){
@@ -236,7 +242,7 @@ void add_book()
         }
     }
     else{
-        cout << "OK - 200 - Book succesfully added.";
+        cout << "OK - 200 - Book succesfully added.\n";
     }
 }
 
@@ -247,7 +253,7 @@ void delete_book()
     cin >> id;
     string message;
     string response;
-    message = compute_delete_request("34.241.4.235", "/api/v1/tema/auth/books/" + id, tokenJWT, "", "", 0, vector<string>(), 0);
+    message = compute_delete_request("34.241.4.235", "/api/v1/tema/library/books/" + id, tokenJWT, "", "", 0, vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
     if(!basic_extract_json_response(response).empty()){
@@ -259,7 +265,7 @@ void delete_book()
         }
     }
     else{
-        cout << "OK - 200 - Book deleted.";
+        cout << "OK - 200 - Book deleted.\n";
     }
 }
 
@@ -269,7 +275,7 @@ void logout()
     string response;
     vector<string> cookies;
     cookies.push_back(sessionId);
-    message = compute_get_request("34.241.4.235", "/api/v1/tema/library/logout", "", "", cookies, cookies.size());
+    message = compute_get_request("34.241.4.235", "/api/v1/tema/auth/logout", "", "", cookies, cookies.size());
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
     if(!basic_extract_json_response(response).empty()){
@@ -281,7 +287,7 @@ void logout()
         }
     }
     else{
-        cout << "OK - 200 - Logged out.";
+        cout << "OK - 200 - Logged out.\n";
     }
 }
 
