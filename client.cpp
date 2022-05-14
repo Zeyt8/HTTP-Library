@@ -84,9 +84,9 @@ void registerUser()
     string username;
     string password;
     cout << "username=";
-    cin >> username;
+    getline(cin, username);
     cout << "password=";
-    cin >> password;
+    getline(cin, password);
     json data;
     data["username"] = username;
     data["password"] = password;
@@ -109,12 +109,13 @@ void registerUser()
 
 void login()
 {
+    cin.ignore();
     string username;
     string password;
     cout << "username=";
-    cin >> username;
+    getline(cin, username);
     cout << "password=";
-    cin >> password;
+    getline(cin, password);
     json data;
     data["username"] = username;
     data["password"] = password;
@@ -122,7 +123,7 @@ void login()
     string response;
     message = compute_post_request("34.241.4.235", "/api/v1/tema/auth/login", "", "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
-    
+    response = receive_from_server(sockfd);
     if(!basic_extract_json_response(response).empty()){
         response = basic_extract_json_response(response);
         json responseJSON = json::parse(response);
@@ -132,7 +133,6 @@ void login()
         }
     }
     else{
-        response = receive_from_server(sockfd);
         response = response.substr(response.find("connect.sid="));
         sessionId = response.substr(0, response.find(";"));
         cout << "200 - OK - Logged in.\n";
@@ -207,21 +207,23 @@ void get_book()
 
 void add_book()
 {
+    cin.ignore();
     string title;
     string author;
     string genre;
     string publisher;
     int page_count;
     cout << "title=";
-    cin >> title;
+    getline(cin, title);
     cout << "author=";
-    cin >> author;
+    getline(cin, author);
     cout << "genre=";
-    cin >> genre;
+    getline(cin, genre);
     cout << "page_count=";
     cin >> page_count;
     cout << "publisher=";
-    cin >> publisher;
+    cin.ignore();
+    getline(cin, publisher);
     json data;
     data["title"] = title;
     data["author"] = author;
@@ -233,6 +235,7 @@ void add_book()
     message = compute_post_request("34.241.4.235", "/api/v1/tema/library/books", tokenJWT, "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
+    cout << response << "\n";
     if(!basic_extract_json_response(response).empty()){
         response = basic_extract_json_response(response);
         json responseJSON = json::parse(response);
@@ -288,6 +291,8 @@ void logout()
     }
     else{
         cout << "OK - 200 - Logged out.\n";
+        sessionId = "";
+        tokenJWT = "";
     }
 }
 

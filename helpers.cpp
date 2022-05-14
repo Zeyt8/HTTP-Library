@@ -59,7 +59,7 @@ void send_to_server(int sockfd, string message)
 
     do
     {
-        bytes = write(sockfd, (void*)(message.c_str() + sent), total - sent);
+        bytes = write(sockfd, (const void*)(message.c_str() + sent), total - sent);
         if (bytes < 0) {
             error("ERROR writing message to socket");
         }

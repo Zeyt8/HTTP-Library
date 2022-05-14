@@ -30,14 +30,16 @@ string compute_get_request(std::string host, std::string url, std::string query_
     // Step 2: add the host
     message += "Host: " + host + "\r\n";
     // Step 3 (optional): add headers and/or cookies, according to the protocol format
-    cookiesString = "Cookie:";
     if (!cookies.empty()) {
-        cookiesString += " ";
-        cookiesString += cookies.front();
-        cookies.pop_back();
-        cookiesString += ";";
+        cookiesString = "Cookie:";
+        while(!cookies.empty()){
+            cookiesString += " ";
+            cookiesString += cookies.front();
+            cookies.pop_back();
+            cookiesString += ";";
+        }
+        message += cookiesString + "\r\n";
     }
-    message += cookiesString + "\r\n";
     // Step 4: add final new line
     message += "\r\n";
     return message;
@@ -65,14 +67,16 @@ string compute_post_request(std::string host, std::string url, string authToken,
     message += "Content-Type: " + content_type + "\r\n";
     message += "Content-Length: " + to_string(body_data_fields_count) + "\r\n";
     // Step 4 (optional): add cookies
-    cookiesString = "Cookie:";
     if (!cookies.empty()) {
-        cookiesString += " ";
-        cookiesString += cookies.front();
-        cookies.pop_back();
-        cookiesString += ";";
+        cookiesString = "Cookie:";
+        while(!cookies.empty()){
+            cookiesString += " ";
+            cookiesString += cookies.front();
+            cookies.pop_back();
+            cookiesString += ";";
+        }
+        message += cookiesString + "\r\n";
     }
-    message += cookiesString + "\r\n";
     // Step 5: add new line at end of header
     message += "\r\n";
     // Step 6: add the actual payload data
@@ -101,14 +105,16 @@ std::string compute_delete_request(std::string host, std::string url, string aut
     */
     message += "Content-Type: " + content_type + "\r\n";
     message += "Content-Length: " + to_string(body_data_fields_count) + "\r\n";
-    cookiesString = "Cookie:";
     if (!cookies.empty()) {
-        cookiesString += " ";
-        cookiesString += cookies.front();
-        cookies.pop_back();
-        cookiesString += ";";
+        cookiesString = "Cookie:";
+        while(!cookies.empty()){
+            cookiesString += " ";
+            cookiesString += cookies.front();
+            cookies.pop_back();
+            cookiesString += ";";
+        }
+        message += cookiesString + "\r\n";
     }
-    message += cookiesString + "\r\n";
     // Step 5: add new line at end of header
     message += "\r\n";
     // Step 6: add the actual payload data
