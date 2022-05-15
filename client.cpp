@@ -172,7 +172,7 @@ void get_books()
     message = compute_get_request("34.241.4.235", "/api/v1/tema/library/books", "", tokenJWT, vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
-    cout << response;
+    cout << response << "\n";
     /*response = basic_extract_json_response(response);
     json responseJSON = json::parse(response);
     if(responseJSON.contains("error"))
@@ -233,6 +233,7 @@ void add_book()
     string message;
     string response;
     message = compute_post_request("34.241.4.235", "/api/v1/tema/library/books", tokenJWT, "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
+    //cout << message << "\n";
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
     cout << response << "\n";
