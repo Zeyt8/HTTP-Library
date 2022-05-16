@@ -18,7 +18,7 @@ string sessionId;
 string tokenJWT;
 bool loggedIn = false;
 bool inLibrary = false;
-int responseCode = 0;
+string responseCode;
 
 void registerUser();
 void login();
@@ -37,7 +37,9 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        cin >> command;
+        //get user command
+        getline(cin, command);
+        //connect to the server
         sockfd = open_connection(connectionIP, 8080, AF_INET, SOCK_STREAM, 0);
         if (command == "register")
         {
@@ -77,7 +79,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            cerr << "Invalid command!\n";
+            cout << "Invalid command!\n";
         }
     }
 }
@@ -90,11 +92,13 @@ void registerUser()
     getline(cin, username);
     cout << "password=";
     getline(cin, password);
+    //create json
     json data;
     data["username"] = username;
     data["password"] = password;
     string message;
     string response;
+    //create message
     message = compute_post_request("34.241.4.235", "/api/v1/tema/auth/register", "", "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
@@ -103,24 +107,28 @@ void registerUser()
         cout << "Error: no message received.\n";
         return;
     }
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
+    //extract payload
     response = basic_extract_json_response(response);
     if (!response.empty())
     {
         json responseJSON = json::parse(response);
         if (responseJSON.contains("error"))
         {
-            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+            cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
         }
     }
     else
     {
-        cout << "200 - OK - User succesfully registered!\n";
+        cout << responseCode << " - User succesfully registered!\n";
     }
 }
 
 void login()
 {
-    cin.ignore();
+    //check if already logged in
     if(loggedIn){
         cout << "You are already logged in!\n";
         return;
@@ -131,46 +139,52 @@ void login()
     getline(cin, username);
     cout << "password=";
     getline(cin, password);
+    //create json
     json data;
     data["username"] = username;
     data["password"] = password;
     string message;
     string response;
+    //create message
     message = compute_post_request("34.241.4.235", "/api/v1/tema/auth/login", "", "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
-    //cout << response << "\n";
     if (response.empty())
     {
         cout << "Error: no message received.\n";
         return;
     }
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
     if (!basic_extract_json_response(response).empty())
     {
         response = basic_extract_json_response(response);
         json responseJSON = json::parse(response);
         if (responseJSON.contains("error"))
         {
-            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+            cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
         }
     }
     else
     {
         response = response.substr(response.find("connect.sid="));
         sessionId = response.substr(0, response.find(";"));
-        cout << "200 - OK - Logged in.\n";
+        cout << responseCode << " - Logged in.\n";
         loggedIn = true;
     }
 }
 
 void enter_library()
 {
+    //check if already in library
     if(inLibrary){
         cout << "Already in library!\n";
         return;
     }
     string message;
     string response;
+    //create cookies
     vector<string> cookies;
     cookies.push_back(sessionId);
     message = compute_get_request("34.241.4.235", "/api/v1/tema/library/access", "", "", cookies, cookies.size());
@@ -180,24 +194,28 @@ void enter_library()
         cout << "Error: no message received.\n";
         return;
     }
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
     if (!basic_extract_json_response(response).empty())
     {
         response = basic_extract_json_response(response);
         json responseJSON = json::parse(response);
         if (responseJSON.contains("error"))
         {
-            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+            cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
         }
         else if (responseJSON.contains("token"))
         {
+            //save token JWT
             tokenJWT = regex_replace(responseJSON["token"].dump(), regex("\""), "");
-            cout << "200 - OK - Entered library.\n";
+            cout  << responseCode << " - Entered library.\n";
             inLibrary = true;
         }
     }
     else
     {
-        cout << "Error\n";
+        cout << "Undefined Error\n";
     }
 }
 
@@ -205,6 +223,7 @@ void get_books()
 {
     string message;
     string response;
+    //create message
     message = compute_get_request("34.241.4.235", "/api/v1/tema/library/books", "", tokenJWT, vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
@@ -213,11 +232,14 @@ void get_books()
         cout << "Error: no message received.\n";
         return;
     }
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
     response = basic_extract_json_response(response);
     json responseJSON = json::parse(response);
     if (responseJSON.contains("error"))
     {
-        cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+        cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
     }
     else
     {
@@ -230,6 +252,8 @@ void get_book()
     int id;
     cout << "id=";
     cin >> id;
+    cin.ignore();
+    //check if is integer
     if (cin.fail())
     {
         cout << "You must enter an integer!\n";
@@ -239,8 +263,8 @@ void get_book()
     }
     string message;
     string response;
+    //create message
     message = compute_get_request("34.241.4.235", "/api/v1/tema/library/books/" + to_string(id), "", tokenJWT, vector<string>(), 0);
-    cout << message << "\n";
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
     if (response.empty())
@@ -248,14 +272,16 @@ void get_book()
         cout << "Error: no message received.\n";
         return;
     }
-    cout << response << "\n";
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
     if (!basic_extract_json_response(response).empty())
     {
         response = basic_extract_json_response(response);
         json responseJSON = json::parse(response);
         if (responseJSON.contains("error"))
         {
-            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+            cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
         }
         else
         {
@@ -283,6 +309,7 @@ void add_book()
     getline(cin, genre);
     cout << "page_count=";
     cin >> page_count;
+    //check if integer
     if(cin.fail()){
         cout << "You must enter an integer!\n";
         cin.clear();
@@ -292,6 +319,7 @@ void add_book()
     cout << "publisher=";
     cin.ignore();
     getline(cin, publisher);
+    //create json
     json data;
     data["title"] = title;
     data["author"] = author;
@@ -300,6 +328,7 @@ void add_book()
     data["publisher"] = publisher;
     string message;
     string response;
+    //create message
     message = compute_post_request("34.241.4.235", "/api/v1/tema/library/books", tokenJWT, "application/json", data.dump(), data.dump().length(), vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
@@ -308,6 +337,9 @@ void add_book()
         cout << "Error: no message received.\n";
         return;
     }
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
     cout << response << "\n";
     if (!basic_extract_json_response(response).empty())
     {
@@ -315,12 +347,12 @@ void add_book()
         json responseJSON = json::parse(response);
         if (responseJSON.contains("error"))
         {
-            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+            cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
         }
     }
     else
     {
-        cout << "OK - 200 - Book succesfully added.\n";
+        cout << responseCode << " - Book succesfully added.\n";
     }
 }
 
@@ -329,6 +361,8 @@ void delete_book()
     int id;
     cout << "id=";
     cin >> id;
+    cin.ignore();
+    //check if integer
     if(cin.fail()){
         cout << "You must enter an integer!\n";
         cin.clear();
@@ -337,6 +371,7 @@ void delete_book()
     }
     string message;
     string response;
+    //create message
     message = compute_delete_request("34.241.4.235", "/api/v1/tema/library/books/" + to_string(id), tokenJWT, "", "", 0, vector<string>(), 0);
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
@@ -345,31 +380,37 @@ void delete_book()
         cout << "Error: no message received.";
         return;
     }
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
     if (!basic_extract_json_response(response).empty())
     {
         response = basic_extract_json_response(response);
         json responseJSON = json::parse(response);
         if (responseJSON.contains("error"))
         {
-            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+            cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
         }
     }
     else
     {
-        cout << "OK - 200 - Book deleted.\n";
+        cout << responseCode << " - Book deleted.\n";
     }
 }
 
 void logout()
 {
+    //check if logged in
     if(!loggedIn){
         cout << "You are not logged in!\n";
         return;
     }
     string message;
     string response;
+    //create cookies
     vector<string> cookies;
     cookies.push_back(sessionId);
+    //create message
     message = compute_get_request("34.241.4.235", "/api/v1/tema/auth/logout", "", "", cookies, cookies.size());
     send_to_server(sockfd, message);
     response = receive_from_server(sockfd);
@@ -378,18 +419,21 @@ void logout()
         cout << "Error: no message received.\n";
         return;
     }
+    //get response code
+    responseCode = response.substr(response.find(" ") + 1);
+    responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
     if (!basic_extract_json_response(response).empty())
     {
         response = basic_extract_json_response(response);
         json responseJSON = json::parse(response);
         if (responseJSON.contains("error"))
         {
-            cout << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
+            cout << responseCode << " - " << regex_replace(responseJSON["error"].dump(), regex("\""), "") << "\n";
         }
     }
     else
     {
-        cout << "OK - 200 - Logged out.\n";
+        cout << responseCode << " - Logged out.\n";
         sessionId = "";
         tokenJWT = "";
         loggedIn = false;
