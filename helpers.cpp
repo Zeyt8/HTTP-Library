@@ -129,8 +129,9 @@ string receive_from_server(int sockfd)
 
 string basic_extract_json_response(string str)
 {
-    if(str.find("{") != string::npos){
-        return str.substr(str.find_first_of("{"));
+    if (str.find("{") != string::npos || str.find("[") != string::npos)
+    {
+        return str.substr(min(str.find_first_of("{"), str.find_first_of("[")));
     }
     else{
         return "";
