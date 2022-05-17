@@ -299,7 +299,6 @@ void get_book()
 
 void add_book()
 {
-    cin.ignore();
     string title;
     string author;
     string genre;
@@ -344,7 +343,6 @@ void add_book()
     //get response code
     responseCode = response.substr(response.find(" ") + 1);
     responseCode = responseCode.substr(0, responseCode.find("\n") - 1);
-    cout << response << "\n";
     if (!basic_extract_json_response(response).empty())
     {
         response = basic_extract_json_response(response);
