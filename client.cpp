@@ -86,6 +86,10 @@ int main(int argc, char *argv[])
 
 void registerUser()
 {
+    if(loggedIn){
+        cout << "You must log out first!\n";
+        return;
+    }
     string username;
     string password;
     cout << "username=";
