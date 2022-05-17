@@ -9,7 +9,7 @@ Jsonul, session id-ul si JWT tokenul sunt extrase cautandu-se secventa de caract
 Functiile de nivel transport au fost preluate din scheletul de laborator si modificate pentru c
 ++.
 
-Pentru parsare json-urilor am folosit libraria nlohmann.
+Pentru parsare json-urilor am folosit libraria nlohmann. Am ales sa o folosesc deoarece este cea recomandata in fisierul cu cerinta.
 
 ## Comenzi
 
