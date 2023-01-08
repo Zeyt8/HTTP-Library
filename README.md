@@ -1,5 +1,9 @@
 # HTTP Library - Communication Protocols - Project 3
 
+A pdf with the detailed description can be found in the repo.
+
+#
+
 The commands are read consecutively from the console. Additional input required for commands will be requested sequentially.
 
 To display responses, the code and status returned by the server are extracted from the response.
